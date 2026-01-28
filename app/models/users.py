@@ -1,9 +1,10 @@
 from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 from pydantic import BaseModel
+from .interactions import ProductLike # <--- Agrega esto arriba
 
 if TYPE_CHECKING:
-    from .products import Product
+    from .products import Product, ProductLike
 
 class UserBase(SQLModel):
     username: str = Field(index=True, unique=True)
@@ -14,4 +15,7 @@ class User(UserBase, table=True):
     hashed_password: str
     
     products: List["Product"] = Relationship(back_populates="owner")
-
+    liked_products: List["Product"] = Relationship(
+        back_populates="favorited_by", 
+        link_model=ProductLike
+    )

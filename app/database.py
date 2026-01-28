@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from sqlmodel import SQLModel, create_engine, Session
+from app.models import User, Product, Comment, ProductLike
 
 load_dotenv()
 
