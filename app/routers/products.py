@@ -4,8 +4,9 @@ from pydantic import BaseModel
 from typing import List
 from app.database import get_session
 from app.models import User, Product, ProductLike
-from app.core.security import get_current_user # Asegúrate de usar el que creamos en core
+from app.core.security import get_current_user
 from app.models import Comment
+from sqlalchemy.orm import selectinload
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -38,12 +39,27 @@ def create_product(
 def get_products(session: Session = Depends(get_session)):
     return session.exec(select(Product)).all()
 
+
+
 @router.get("/{product_id}")
 def get_product(product_id: int, session: Session = Depends(get_session)):
-    product = session.get(Product, product_id)
+    statement = (
+        select(Product)
+        .where(Product.id == product_id)
+        .options(selectinload(Product.comments))
+    )
+    product = session.exec(statement).first()
+
     if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    return product
+    
+    product_data = product.model_dump()
+    product_data["comments"] = [c.model_dump() for c in product.comments]
+    product_data["likes_count"] = product.likes_count
+    
+    return product_data
+
+
 
 @router.post("/{product_id}/like")
 def toggle_like(
