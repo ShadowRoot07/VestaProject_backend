@@ -16,6 +16,9 @@ class Product(SQLModel, table=True):
     affiliate_link: str
     category: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    @property
+    def likes_count(self) -> int:
+        return len(self.favorited_by)
 
     owner_id: int = Field(foreign_key="user.id")
     owner: "User" = Relationship(back_populates="products")

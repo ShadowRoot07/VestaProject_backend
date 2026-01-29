@@ -5,6 +5,7 @@ from typing import List
 from app.database import get_session
 from app.models import User, Product, ProductLike
 from app.core.security import get_current_user # Asegúrate de usar el que creamos en core
+from app.models import Comment
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -15,6 +16,11 @@ class ProductCreate(BaseModel):
     image_url: str
     affiliate_link: str
     category: str
+
+
+class CommentCreate(BaseModel):
+    content: str
+
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_product(
@@ -65,3 +71,26 @@ def toggle_like(
     session.commit()
     return {"liked": True, "message": "¡Like guardado!"}
 
+
+@router.post("/{product_id}/comments", status_code=status.HTTP_201_CREATED)
+def create_comment(
+    product_id: int,
+    comment_data: CommentCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    # 1. Verificar si el producto existe
+    product = session.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+
+    # 2. Crear el comentario
+    new_comment = Comment(
+        content=comment_data.content,
+        product_id=product_id,
+        user_id=current_user.id
+    )
+    session.add(new_comment)
+    session.commit()
+    session.refresh(new_comment)
+    return new_comment
