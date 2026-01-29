@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from .interactions import ProductLike # <--- Agrega esto arriba
 
 if TYPE_CHECKING:
-    from .products import Product, ProductLike
+    from .products import Product, ProductLike, Comment
 
 class UserBase(SQLModel):
     username: str = Field(index=True, unique=True)
@@ -19,3 +19,4 @@ class User(UserBase, table=True):
         back_populates="favorited_by", 
         link_model=ProductLike
     )
+    comments: List["Comment"] = Relationship(back_populates="user") 

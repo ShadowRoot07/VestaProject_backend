@@ -38,4 +38,5 @@ class Comment(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id")
     product_id: int = Field(foreign_key="product.id")
     product: Product = Relationship(back_populates="comments")
+    user: "User" = Relationship(back_populates="comments")
 

@@ -54,7 +54,12 @@ def get_product(product_id: int, session: Session = Depends(get_session)):
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     
     product_data = product.model_dump()
-    product_data["comments"] = [c.model_dump() for c in product.comments]
+    product_data["comments"] = [
+    {
+        **c.model_dump(),
+        "username": c.user.username
+    } for c in product.comments
+    ]
     product_data["likes_count"] = product.likes_count
     
     return product_data
@@ -110,3 +115,21 @@ def create_comment(
     session.commit()
     session.refresh(new_comment)
     return new_comment
+
+@router.delete("/comments/{comment_id}")
+def delete_comment(
+    comment_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    comment = session.get(Comment, comment_id)
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comentario no encontrado")
+    
+    # SEGURIDAD: Solo el dueño puede borrarlo
+    if comment.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para borrar este comentario")
+    
+    session.delete(comment)
+    session.commit()
+    return {"message": "Comentario eliminado"}
