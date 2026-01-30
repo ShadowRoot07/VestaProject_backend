@@ -133,3 +133,55 @@ def delete_comment(
     session.delete(comment)
     session.commit()
     return {"message": "Comentario eliminado"}
+
+
+@router.put("/{product_id}")
+def update_product(
+    product_id: int,
+    product_data: ProductCreate, # Usamos el mismo esquema de creación
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    product = session.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    
+    # 🔒 VALIDACIÓN: ¿Es el dueño?
+    if product.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=403, 
+            detail="No tienes permiso para editar este producto"
+        )
+
+    # Actualizamos los campos
+    data_dict = product_data.dict(exclude_unset=True)
+    for key, value in data_dict.items():
+        setattr(product, key, value)
+    
+    session.add(product)
+    session.commit()
+    session.refresh(product)
+    return product
+
+
+@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_product(
+    product_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    product = session.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+
+    # 🔒 VALIDACIÓN: ¿Es el dueño?
+    if product.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=403, 
+            detail="No tienes permiso para eliminar este producto"
+        )
+
+    session.delete(product)
+    session.commit()
+    return None # Al ser 204 No Content, no devolvemos cuerpo
+
