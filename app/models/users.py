@@ -13,6 +13,10 @@ class UserBase(SQLModel):
 class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     hashed_password: str
+
+    bio: Optional[str] = Field(default="¡Hola! Soy un nuevo desarrollador en Vesta.")
+    profile_pic: Optional[str] = Field(default="https://ruta-por-defecto.com/avatar.png")
+    website: Optional[str] = Field(default=None)
     
     products: List["Product"] = Relationship(back_populates="owner")
     liked_products: List["Product"] = Relationship(

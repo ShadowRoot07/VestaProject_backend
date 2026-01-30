@@ -1,5 +1,9 @@
 # VestaProject API (backend).
 
+## Notas en tener en cuenta:
+
+
+
 ## comandos:
 
 ```bash
@@ -71,4 +75,19 @@ http GET "http://127.0.0.1:8000/search?q=Laptop&min_price=500&max_price=1500&sor
 
 # Solo ver productos que cuesten menos de 100 dólares
 http GET "http://127.0.0.1:8000/search?max_price=100"
+```
+
+* comando para actualizar perfil creado.
+
+```bash
+http PUT http://127.0.0.1:8000/users/me \
+    bio="ShadowRoot07 | Backend Developer & Neovim Enthusiast" \
+    website="https://github.com/ShadowRoot07" \
+    "Authorization: Bearer $TOKEN"
+```
+
+* Comando GET para ver perfil:
+
+```bash
+http GET http://127.0.0.1:8000/users/ShadowRoot07
 ```
