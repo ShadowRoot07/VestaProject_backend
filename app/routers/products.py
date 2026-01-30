@@ -215,30 +215,6 @@ def delete_product(
     return None
 
 
-@router.get("")
-def get_products(
-    session: Session = Depends(get_session),
-    category: Optional[str] = None,
-    search: Optional[str] = None,
-    offset: int = 0,
-    limit: int = 20
-):
-    statement = select(Product)
-    
-    # Filtro por categoría
-    if category:
-        statement = statement.where(Product.category == category)
-    
-    # Búsqueda por nombre (Case-insensitive)
-    if search:
-        statement = statement.where(Product.title.contains(search))
-    
-    # Paginación
-    statement = statement.offset(offset).limit(limit)
-    
-    products = session.exec(statement).all()
-    return products
-
 
 @router.put("/comments/{comment_id}")
 def update_comment(
