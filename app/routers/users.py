@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from typing import List
 from app.database import get_session
-from app.models import User, Product, UserPublic
+from app.models import User, Product, UserPublic, UserUpdate
 from app.core.security import get_current_user
+from sqlalchemy.orm import selectinload
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -27,20 +28,36 @@ def get_my_profile(current_user: User = Depends(get_current_user)):
     return current_user
 
 
-@router.put("/me")
+@router.put("/me", response_model=UserPublic)
 def update_my_profile(
-    user_data: dict, # Luego podemos crear un esquema Pydantic para esto
+    user_data: UserUpdate, 
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    current_user.bio = user_data.get("bio", current_user.bio)
-    current_user.profile_pic = user_data.get("profile_pic", current_user.profile_pic)
-    current_user.website = user_data.get("website", current_user.website)
+    """
+    Actualiza el perfil del usuario autenticado de forma dinámica.
+    """
+    # Convertimos el esquema a diccionario, ignorando los campos no enviados
+    update_data = user_data.model_dump(exclude_unset=True)
+    
+    # Aplicamos los cambios al objeto de la base de datos
+    for key, value in update_data.items():
+        setattr(current_user, key, value)
     
     session.add(current_user)
     session.commit()
-    session.refresh(current_user)
-    return {"message": "Perfil actualizado", "user": current_user}
+    session.refresh(current_user) # Recargamos para obtener los datos frescos de la DB
+
+    # Calculamos la reputación para devolver el objeto UserPublic completo
+    total_likes = sum(len(product.favorited_by) for product in current_user.products)
+    
+    # Construimos la respuesta manualmente para cumplir con UserPublic
+    return {
+        **current_user.model_dump(),
+        "total_reputation": total_likes,
+        "products_count": len(current_user.products),
+        "products": current_user.products
+    }
 
 
 @router.get("/{username}", response_model=UserPublic)
@@ -49,7 +66,7 @@ def get_user_profile(
     session: Session = Depends(get_session)
 ):
     # 1. Buscamos al usuario
-    statement = select(User).where(User.username == username)
+    statement = select(User).where(User.username == username).options(selectinload(User.products))
     user = session.exec(statement).first()
 
     if not user:

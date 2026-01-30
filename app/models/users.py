@@ -40,4 +40,11 @@ class UserPublic(BaseModel):
     class Config:
         from_attributes = True 
 
+
+class UserUpdate(BaseModel):
+    bio: Optional[str] = None
+    profile_pic: Optional[str] = None
+    website: Optional[str] = None
+
+
 #UserPublic.model_rebuild()
