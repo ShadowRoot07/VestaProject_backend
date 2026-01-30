@@ -42,3 +42,25 @@ http GET "http://127.0.0.1:8000/products?search=Gamer"
 # Pedir solo los primeros 5 productos
 http GET "http://127.0.0.1:8000/products?limit=5"
 ```
+
+
+```bash
+http PUT http://127.0.0.1:8000/products/comments/1 \
+    content="Este es mi comentario editado y corregido." \
+    "Authorization: Bearer $TOKEN"
+```
+
+* comando para ver los mejores productos (con mas likes):
+
+```bash
+# Obtener el top 10 de productos más populares
+http GET http://127.0.0.1:8000/products/trending
+```
+
+* comando para crear comentarios:
+
+```bash
+http POST http://127.0.0.1:8000/products/1/comments \
+    content="¡Este producto me encantó! Muy recomendado." \
+    "Authorization: Bearer $TOKEN"
+```

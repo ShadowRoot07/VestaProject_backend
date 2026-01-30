@@ -7,6 +7,8 @@ from app.models import User, Product, ProductLike
 from app.core.security import get_current_user
 from app.models import Comment
 from sqlalchemy.orm import selectinload
+from sqlalchemy import func
+
 router = APIRouter(prefix="/products", tags=["products"])
 
 class ProductCreate(BaseModel):
@@ -37,6 +39,32 @@ def create_product(
 @router.get("", response_model=List[Product])
 def get_products(session: Session = Depends(get_session)):
     return session.exec(select(Product)).all()
+
+
+
+@router.get("/trending", response_model=List[Product])
+def get_trending_products(
+    session: Session = Depends(get_session),
+    limit: int = 10
+):
+    """
+    Retorna los productos con más likes, ordenados de mayor a menor.
+    """
+    # Esta es una query avanzada:
+    # 1. Seleccionamos el Producto
+    # 2. Hacemos un JOIN con la tabla de likes
+    # 3. Agrupamos por el ID del producto
+    # 4. Ordenamos por la cuenta de likes en orden descendente
+    statement = (
+        select(Product)
+        .join(ProductLike, isouter=True)
+        .group_by(Product.id)
+        .order_by(func.count(ProductLike.user_id).desc())
+            .limit(limit)
+    )
+
+    trending = session.exec(statement).all()
+    return trending
 
 
 
@@ -210,3 +238,32 @@ def get_products(
     
     products = session.exec(statement).all()
     return products
+
+
+@router.put("/comments/{comment_id}")
+def update_comment(
+    comment_id: int,
+    comment_data: CommentCreate, # Reutilizamos el esquema que pide "content"
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    comment = session.get(Comment, comment_id)
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comentario no encontrado")
+    
+    # Seguridad: ¿Es el dueño del comentario?
+    if comment.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403, 
+            detail="No tienes permiso para editar este comentario"
+        )
+
+    comment.content = comment_data.content
+    # Opcional: podrías añadir un campo 'updated_at' si quieres trackear ediciones
+    
+    session.add(comment)
+    session.commit()
+    session.refresh(comment)
+    return comment
+
+
