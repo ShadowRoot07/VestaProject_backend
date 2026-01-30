@@ -64,3 +64,11 @@ http POST http://127.0.0.1:8000/products/1/comments \
     content="¡Este producto me encantó! Muy recomendado." \
     "Authorization: Bearer $TOKEN"
 ```
+
+```bash
+# Buscar Laptops entre 500 y 1500 dólares, ordenadas por la más barata
+http GET "http://127.0.0.1:8000/search?q=Laptop&min_price=500&max_price=1500&sort_by=lowest_price"
+
+# Solo ver productos que cuesten menos de 100 dólares
+http GET "http://127.0.0.1:8000/search?max_price=100"
+```

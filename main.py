@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from sqlmodel import SQLModel
 from app.database import create_db_and_tables
-from app.routers import auth, products, users
+from app.routers import auth, products, users, search
 
 # Configuración de convenciones (mantenla aquí)
 SQLModel.metadata.naming_convention = {
@@ -22,6 +22,7 @@ def on_startup():
 app.include_router(auth.router)
 app.include_router(products.router)
 app.include_router(users.router)
+app.include_router(search.router)
 
 # Puedes mover el endpoint /me/products a un router de 'users' o dejarlo en products
 
