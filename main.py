@@ -2,6 +2,10 @@ from fastapi import FastAPI
 from sqlmodel import SQLModel
 from app.database import create_db_and_tables
 from app.routers import auth, products, users, search
+from app.models.users import UserPublic
+from app.models.products import Product
+
+UserPublic.model_rebuild()
 
 # Configuración de convenciones (mantenla aquí)
 SQLModel.metadata.naming_convention = {

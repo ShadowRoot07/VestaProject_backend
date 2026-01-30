@@ -1,5 +1,5 @@
 from .interactions import ProductLike
-from .users import User
+from .users import User, UserPublic
 from .products import Product, Comment
 
 # Esto fuerza a SQLModel a conectar los cables internos 
@@ -9,5 +9,5 @@ Product.model_rebuild()
 Comment.model_rebuild()
 
 # Exportamos para que main.py los encuentre
-__all__ = ["User", "Product", "Comment", "ProductLike"]
+__all__ = ["User", "Product", "Comment", "ProductLike", "UserPublic"]
 

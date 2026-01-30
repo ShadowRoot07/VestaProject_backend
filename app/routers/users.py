@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from typing import List
 from app.database import get_session
-from app.models import User, Product
+from app.models import User, Product, UserPublic
 from app.core.security import get_current_user
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -43,27 +43,29 @@ def update_my_profile(
     return {"message": "Perfil actualizado", "user": current_user}
 
 
-
-@router.get("/{username}")
+@router.get("/{username}", response_model=UserPublic)
 def get_user_profile(
     username: str,
     session: Session = Depends(get_session)
 ):
-    # Buscamos al usuario por su nombre
+    # 1. Buscamos al usuario
     statement = select(User).where(User.username == username)
     user = session.exec(statement).first()
-    
+
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    
-    # Preparamos la respuesta con sus productos
+
+    # 2. Cálculo de reputación
+    total_likes = sum(len(product.favorited_by) for product in user.products)
+
+    # 3. Retornamos el objeto con los nombres de campos que espera UserPublic
     return {
         "username": user.username,
         "bio": user.bio,
         "profile_pic": user.profile_pic,
         "website": user.website,
-        "joined_at": user.id, # Opcional: podrías usar un campo created_at
+        "total_reputation": total_likes,
         "products_count": len(user.products),
-        "products": user.products # Esto lista sus publicaciones
+        "products": user.products
     }
 
