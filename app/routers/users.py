@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from typing import List
 from app.database import get_session
 from app.models import User, Product
 from app.core.security import get_current_user
 
-router = APIRouter(prefix="/me", tags=["profile"])
+router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get("/products", response_model=List[Product])
 def get_my_products(
