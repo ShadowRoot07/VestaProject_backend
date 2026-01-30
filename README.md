@@ -31,3 +31,14 @@ http PUT http://127.0.0.1:8000/products/1 \
 http DELETE http://127.0.0.1:8000/products/1 \
     "Authorization: Bearer $TOKEN"
 ```
+
+```bash
+# Buscar solo productos de tecnología
+http GET "http://127.0.0.1:8000/products?category=Tecnología"
+
+# Buscar productos que tengan la palabra 'Gamer'
+http GET "http://127.0.0.1:8000/products?search=Gamer"
+
+# Pedir solo los primeros 5 productos
+http GET "http://127.0.0.1:8000/products?limit=5"
+```

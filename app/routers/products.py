@@ -1,13 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from app.database import get_session
 from app.models import User, Product, ProductLike
 from app.core.security import get_current_user
 from app.models import Comment
 from sqlalchemy.orm import selectinload
-
 router = APIRouter(prefix="/products", tags=["products"])
 
 class ProductCreate(BaseModel):
@@ -187,3 +186,27 @@ def delete_product(
     session.commit()
     return None
 
+
+@router.get("")
+def get_products(
+    session: Session = Depends(get_session),
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    offset: int = 0,
+    limit: int = 20
+):
+    statement = select(Product)
+    
+    # Filtro por categoría
+    if category:
+        statement = statement.where(Product.category == category)
+    
+    # Búsqueda por nombre (Case-insensitive)
+    if search:
+        statement = statement.where(Product.title.contains(search))
+    
+    # Paginación
+    statement = statement.offset(offset).limit(limit)
+    
+    products = session.exec(statement).all()
+    return products
