@@ -174,14 +174,16 @@ def delete_product(
     if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
 
-    # 🔒 VALIDACIÓN: ¿Es el dueño?
     if product.owner_id != current_user.id:
-        raise HTTPException(
-            status_code=403, 
-            detail="No tienes permiso para eliminar este producto"
-        )
+        raise HTTPException(status_code=403, detail="No autorizado")
 
+    # Limpiamos manualmente los likes (la relación muchos-a-muchos)
+    # Esto elimina las filas en la tabla 'productlike' sin borrar a los usuarios
+    product.favorited_by = [] 
+    session.add(product)
+    
+    # Ahora sí, borramos el producto (esto disparará el cascade en comentarios)
     session.delete(product)
     session.commit()
-    return None # Al ser 204 No Content, no devolvemos cuerpo
+    return None
 

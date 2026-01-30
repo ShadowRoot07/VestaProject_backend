@@ -22,10 +22,14 @@ class Product(SQLModel, table=True):
 
     owner_id: int = Field(foreign_key="user.id")
     owner: "User" = Relationship(back_populates="products")
-    comments: List["Comment"] = Relationship(back_populates="product")
+    comments: List["Comment"] = Relationship(
+        back_populates="product",
+        cascade_delete=True 
+    )
+
     favorited_by: List["User"] = Relationship(
         back_populates="liked_products",
-        link_model=ProductLike
+        link_model=ProductLike,
     )
 
 
