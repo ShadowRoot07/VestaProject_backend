@@ -3,7 +3,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from datetime import datetime
 from .interactions import ProductLike
 from .affiliates import AffiliateLink
-
+from .categories import Category
 
 if TYPE_CHECKING:
     from .users import User
@@ -16,7 +16,8 @@ class Product(SQLModel, table=True):
     price: float
     image_url: Optional[str] = Field(default="https://via.placeholder.com/150")
     affiliate_link: Optional[str] = Field(default=None)
-    category: str
+    category_id: Optional[int] = Field(default=None, foreign_key="category.id")
+    category_rel: Optional[Category] = Relationship(back_populates="products")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     @property
     def likes_count(self) -> int:

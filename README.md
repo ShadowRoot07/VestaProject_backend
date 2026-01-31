@@ -158,9 +158,6 @@ http POST http://127.0.0.1:8000/auth/register \
 http GET :8000/users/profile "Authorization: Bearer $TOKEN"
 ```
 
-```bash
-http POST http://127.0.0.1:8000/products     name="Laptop Nitro"     description="Gaming potente"     price=1200     category="Gaming"     "Authorization: Bearer $TOKEN"
-```
 
 ```bash
 http POST http://127.0.0.1:8000/products/ \
@@ -184,3 +181,22 @@ http PATCH :8000/affiliates/1 \
 http DELETE :8000/affiliates/1 "Authorization: Bearer $TOKEN"
 ```
 
+```bash
+http POST http://127.0.0.1:8000/categories/ \
+    name="Tecnología" \
+    slug="tech" \
+    description="Gadgets y periféricos para entusiastas"
+```
+
+```bash
+http GET http://127.0.0.1:8000/categories/
+```
+
+```bash
+http POST http://127.0.0.1:8000/products \
+    name="Mouse Logitech G502" \
+    description="El mouse más vendido" \
+    price=49.99 \
+    category_id=1 \
+    "Authorization: Bearer $TOKEN"
+```
