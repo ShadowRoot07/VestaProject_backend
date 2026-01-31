@@ -4,6 +4,9 @@ from app.database import create_db_and_tables
 from app.routers import auth, products, users, search
 from app.models.users import UserPublic
 from app.models.products import Product
+from app.routers import affiliates
+from app.models.affiliates import AffiliateLink
+
 
 UserPublic.model_rebuild()
 
@@ -27,6 +30,7 @@ app.include_router(auth.router)
 app.include_router(products.router)
 app.include_router(users.router)
 app.include_router(search.router)
+app.include_router(affiliates.router)
 
 # Puedes mover el endpoint /me/products a un router de 'users' o dejarlo en products
 

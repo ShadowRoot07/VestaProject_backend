@@ -2,6 +2,37 @@
 
 ## Notas en tener en cuenta:
 
+## Sistema de Identidad Social (Módulo de Usuarios)
+
+ * Perfil Enriquecido: Se extendió el modelo de usuario para incluir bio, profile_pic, website y estadísticas de actividad.
+
+ * Reputación Dinámica: Implementación de un algoritmo para calcular la "reputación" del usuario basada en el total de likes acumulados en todas sus publicaciones.
+
+ * Seguridad de Datos: Integración de esquemas UserPublic para filtrar información sensible (como contraseñas) en los endpoints públicos.
+
+ * Actualización Inteligente: Endpoint PUT /me con lógica de actualización parcial (exclude_unset), permitiendo modificar el perfil sin afectar datos no enviados.
+
+### Motor de Búsqueda y Filtros
+ * Búsqueda Avanzada: Creación de un módulo de búsqueda (search.py) con filtros por texto, rangos de precio y categorías.
+
+ * Ranking de Tendencias: Lógica para identificar y mostrar los productos con más interacciones (most likes).
+
+ * Optimización de Consultas: Uso de selectinload de SQLAlchemy para evitar el problema de N+1 consultas al cargar productos y sus relaciones.
+
+### Gestión de Productos y Feedback
+
+ * CRUD Completo: Finalización de las operaciones de creación, lectura, actualización y borrado de productos con validación de autoría.
+
+ * Sistema de Feedback: Implementación de un sistema de comentarios con soporte para edición (PUT) y eliminación, junto con un sistema de "Likes" con lógica de alternancia (toggle).
+
+### Arquitectura y Estabilidad
+
+ * Modularización: Desacoplamiento total de rutas en módulos independientes (auth, products, users, search).
+
+ * Resolución de Dependencias: Solución técnica a importaciones circulares complejas entre modelos de Pydantic/SQLModel mediante reconstrucción de modelos en el punto de entrada (main.py).
+
+ * Corrección de Errores: Depuración de inconsistencias en la base de datos (migraciones manuales de columnas en Neon) y refinamiento del orden de rutas dinámicas.
+ 
 
 
 ## comandos:

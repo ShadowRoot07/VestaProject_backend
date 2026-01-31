@@ -2,6 +2,8 @@ from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 from datetime import datetime
 from .interactions import ProductLike
+from .affiliates import AffiliateLink
+
 
 if TYPE_CHECKING:
     from .users import User
@@ -31,6 +33,7 @@ class Product(SQLModel, table=True):
         back_populates="liked_products",
         link_model=ProductLike,
     )
+    affiliate_links: List["AffiliateLink"] = Relationship(back_populates="product")
 
 
 
