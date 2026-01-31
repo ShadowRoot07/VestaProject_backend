@@ -200,3 +200,11 @@ http POST http://127.0.0.1:8000/products \
     category_id=1 \
     "Authorization: Bearer $TOKEN"
 ```
+
+* **Comando especial para limpiar la base de datos:** solo usarlo en casos especoales o de emergencia.
+
+```bash
+python reset_db.python
+```
+
+Esto ehecuta el Script especial encargado de eso, **USAR CON CUIDADO!!**.

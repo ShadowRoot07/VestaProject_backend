@@ -1,245 +1,70 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
-from pydantic import BaseModel
 from typing import List, Optional
 from app.database import get_session
-from app.models import User, Product, ProductLike
+from app.models.products import Product
+from app.models.users import User
 from app.core.security import get_current_user
-from app.models import Comment
-from sqlalchemy.orm import selectinload
-from sqlalchemy import func
-
-router = APIRouter(prefix="/products", tags=["products"])
-
-class ProductCreate(BaseModel):
-    title: str
-    description: str
-    price: float
-    image_url: str
-    affiliate_link: str
-    category: str
-
-
-class CommentCreate(BaseModel):
-    content: str
-
-
-@router.post("", status_code=status.HTTP_201_CREATED)
-def create_product(
-    product_data: ProductCreate,
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
-):
-    new_product = Product(**product_data.dict(), owner_id=current_user.id)
-    session.add(new_product)
-    session.commit()
-    session.refresh(new_product)
-    return new_product
+# Usamos redirect_slashes=False para que /products funcione sin /
+router = APIRouter(prefix="/products", tags=["products"], redirect_slashes=False)
 
 @router.get("", response_model=List[Product])
-def get_products(session: Session = Depends(get_session)):
-    return session.exec(select(Product)).all()
-
-
-
-@router.get("/trending", response_model=List[Product])
-def get_trending_products(
-    session: Session = Depends(get_session),
-    limit: int = 10
+def get_products(
+    offset: int = 0,
+    limit: int = Query(default=100, le=100),
+    session: Session = Depends(get_session)
 ):
-    """
-    Retorna los productos con más likes, ordenados de mayor a menor.
-    """
-    # Esta es una query avanzada:
-    # 1. Seleccionamos el Producto
-    # 2. Hacemos un JOIN con la tabla de likes
-    # 3. Agrupamos por el ID del producto
-    # 4. Ordenamos por la cuenta de likes en orden descendente
-    statement = (
-        select(Product)
-        .join(ProductLike, isouter=True)
-        .group_by(Product.id)
-        .order_by(func.count(ProductLike.user_id).desc())
-            .limit(limit)
-    )
+    """Listar todos los productos"""
+    return session.exec(select(Product).offset(offset).limit(limit)).all()
 
-    trending = session.exec(statement).all()
-    return trending
-
-
-
-@router.get("/{product_id}")
-def get_product(product_id: int, session: Session = Depends(get_session)):
-    statement = (
-        select(Product)
-        .where(Product.id == product_id)
-        .options(selectinload(Product.comments))
-    )
-    product = session.exec(statement).first()
-
-    if not product:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
+@router.post("", response_model=Product)
+def create_product(
+    product_data: Product, # Usamos el modelo directo para simplificar por ahora
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """Crear un producto vinculado a una categoría y a un dueño"""
     
-    product_data = product.model_dump()
-    product_data["comments"] = [
-    {
-        **c.model_dump(),
-        "username": c.user.username
-    } for c in product.comments
-    ]
-    product_data["likes_count"] = product.likes_count
+    # 1. Verificar que el owner_id sea el del usuario logueado
+    product_data.owner_id = current_user.id
     
+    # 2. El category_id ya viene en product_data según tu modelo
+    session.add(product_data)
+    try:
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Error al crear producto: Asegúrate de que la categoría {product_data.category_id} exista."
+        )
+        
+    session.refresh(product_data)
     return product_data
 
-
-
-@router.post("/{product_id}/like")
-def toggle_like(
-    product_id: int,
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
-):
+@router.get("/{product_id}", response_model=Product)
+def get_product(product_id: int, session: Session = Depends(get_session)):
+    """Obtener un producto específico"""
     product = session.get(Product, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    
-    statement = select(ProductLike).where(
-        ProductLike.user_id == current_user.id,
-        ProductLike.product_id == product_id
-    )
-    like = session.exec(statement).first()
-    
-    if like:
-        session.delete(like)
-        session.commit()
-        return {"liked": False, "message": "Like eliminado"}
-    
-    new_like = ProductLike(user_id=current_user.id, product_id=product_id)
-    session.add(new_like)
-    session.commit()
-    return {"liked": True, "message": "¡Like guardado!"}
-
-
-@router.post("/{product_id}/comments", status_code=status.HTTP_201_CREATED)
-def create_comment(
-    product_id: int,
-    comment_data: CommentCreate,
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
-):
-    # 1. Verificar si el producto existe
-    product = session.get(Product, product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-
-    # 2. Crear el comentario
-    new_comment = Comment(
-        content=comment_data.content,
-        product_id=product_id,
-        user_id=current_user.id
-    )
-    session.add(new_comment)
-    session.commit()
-    session.refresh(new_comment)
-    return new_comment
-
-@router.delete("/comments/{comment_id}")
-def delete_comment(
-    comment_id: int,
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
-):
-    comment = session.get(Comment, comment_id)
-    if not comment:
-        raise HTTPException(status_code=404, detail="Comentario no encontrado")
-    
-    # SEGURIDAD: Solo el dueño puede borrarlo
-    if comment.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="No tienes permiso para borrar este comentario")
-    
-    session.delete(comment)
-    session.commit()
-    return {"message": "Comentario eliminado"}
-
-
-@router.put("/{product_id}")
-def update_product(
-    product_id: int,
-    product_data: ProductCreate, # Usamos el mismo esquema de creación
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
-):
-    product = session.get(Product, product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-    
-    # 🔒 VALIDACIÓN: ¿Es el dueño?
-    if product.owner_id != current_user.id:
-        raise HTTPException(
-            status_code=403, 
-            detail="No tienes permiso para editar este producto"
-        )
-
-    # Actualizamos los campos
-    data_dict = product_data.dict(exclude_unset=True)
-    for key, value in data_dict.items():
-        setattr(product, key, value)
-    
-    session.add(product)
-    session.commit()
-    session.refresh(product)
     return product
 
-
-@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{product_id}")
 def delete_product(
-    product_id: int,
+    product_id: int, 
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
+    """Borrar un producto (solo el dueño puede)"""
     product = session.get(Product, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-
-    if product.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="No autorizado")
-
-    # Limpiamos manualmente los likes (la relación muchos-a-muchos)
-    # Esto elimina las filas en la tabla 'productlike' sin borrar a los usuarios
-    product.favorited_by = [] 
-    session.add(product)
     
-    # Ahora sí, borramos el producto (esto disparará el cascade en comentarios)
+    if product.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para borrar este producto")
+        
     session.delete(product)
     session.commit()
-    return None
-
-
-
-@router.put("/comments/{comment_id}")
-def update_comment(
-    comment_id: int,
-    comment_data: CommentCreate, # Reutilizamos el esquema que pide "content"
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
-):
-    comment = session.get(Comment, comment_id)
-    if not comment:
-        raise HTTPException(status_code=404, detail="Comentario no encontrado")
-    
-    # Seguridad: ¿Es el dueño del comentario?
-    if comment.user_id != current_user.id:
-        raise HTTPException(
-            status_code=403, 
-            detail="No tienes permiso para editar este comentario"
-        )
-
-    comment.content = comment_data.content
-    # Opcional: podrías añadir un campo 'updated_at' si quieres trackear ediciones
-    
-    session.add(comment)
-    session.commit()
-    session.refresh(comment)
-    return comment
-
+    return {"message": "Producto eliminado"}
 
