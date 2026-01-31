@@ -122,3 +122,53 @@ http PUT http://127.0.0.1:8000/users/me \
 ```bash
 http GET http://127.0.0.1:8000/users/ShadowRoot07
 ```
+
+```bash
+http POST http://127.0.0.1:8000/affiliates/ \
+    platform_name="Amazon" \
+    url="https://www.amazon.com/ejemplo-producto-afiliado" \
+    product_id=1 \
+    "Authorization: Bearer $TOKEN"
+```
+
+```bash
+http GET http://127.0.0.1:8000/affiliates/go/1
+```
+
+```bash
+http GET http://127.0.0.1:8000/affiliates/go/1 "Authorization: Bearer $TOKEN"
+```
+
+```bash
+http GET http://127.0.0.1:8000/affiliates/product/1
+```
+
+```bash
+http GET http://127.0.0.1:8000/affiliates/analytics/1 "Authorization: Bearer $TOKEN"
+```
+
+```bash
+http POST http://127.0.0.1:8000/auth/register \
+    username="GhostShell_07" \
+    email="ghost@vesta.project" \
+    password="password123"
+```
+
+```bash
+http GET :8000/users/profile "Authorization: Bearer $TOKEN"
+```
+
+```bash
+http POST http://127.0.0.1:8000/products     name="Laptop Nitro"     description="Gaming potente"     price=1200     category="Gaming"     "Authorization: Bearer $TOKEN"
+```
+
+```bash
+http POST http://127.0.0.1:8000/products/ \
+    title="Teclado Ghost" \
+    description="Teclado especial para GhostShell_07" \
+    price=50.0 \
+    category="Tech" \
+    image_url="https://via.placeholder.com/150" \
+    affiliate_link="https://amazon.com/placeholder" \
+    "Authorization: Bearer $TOKEN"
+```

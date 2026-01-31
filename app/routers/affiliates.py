@@ -5,7 +5,7 @@ from typing import Optional
 import jose
 #--- Importacion de modelos ---
 from app.database import get_session
-from app.models.affiliates import AffiliateLink, ClickEvent
+from app.models.affiliates import AffiliateLink, ClickEvent, AffiliateLinkCreate
 from app.models import User, Product
 from app.core.security import ALGORITHM, SECRET_KEY, get_current_user
 
@@ -16,14 +16,19 @@ def get_optional_user_id(request: Request) -> Optional[int]:
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         return None
-    
+
     try:
         token = auth_header.split(" ")[1]
         payload = jose.jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id_raw = payload.get("sub")
-        return user_id_raw
+        
+        # IMPORTANTE: Convertimos a int porque SQLModel/Postgres 
+        # espera un número para la relación con el Usuario.
+        return int(user_id_raw) if user_id_raw else None 
+        
     except Exception:
         return None
+
 
 @router.post("/", response_model=AffiliateLink)
 def create_affiliate_link(

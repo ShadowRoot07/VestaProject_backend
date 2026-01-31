@@ -5,10 +5,11 @@ from app.routers import auth, products, users, search
 from app.models.users import UserPublic
 from app.models.products import Product
 from app.routers import affiliates
-from app.models.affiliates import AffiliateLink
-
+from app.models.affiliates import AffiliateLink, ClickEvent
 
 UserPublic.model_rebuild()
+Product.model_rebuild()
+AffiliateLink.model_rebuild()
 
 # Configuración de convenciones (mantenla aquí)
 SQLModel.metadata.naming_convention = {
