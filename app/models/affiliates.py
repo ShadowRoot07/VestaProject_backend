@@ -1,10 +1,12 @@
 from datetime import datetime
 from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
+from pydantic import BaseModel
 
 # Importación para el tipado de Product sin causar círculos
 if TYPE_CHECKING:
     from .products import Product
+    from .users import User
 
 class AffiliateLinkBase(SQLModel):
     platform_name: str 
@@ -32,4 +34,10 @@ class ClickEvent(SQLModel, table=True):
 class AffiliateLinkPublic(AffiliateLinkBase):
     id: int
     # Nota: Aquí click_count no existe en la tabla, deberás calcularlo o añadirlo
+
+
+class AffiliateLinkCreate(BaseModel):
+    platform_name: str
+    url: str
+    product_id: int
 

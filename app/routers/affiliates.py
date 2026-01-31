@@ -6,7 +6,9 @@ import jose
 #--- Importacion de modelos ---
 from app.database import get_session
 from app.models.affiliates import AffiliateLink, ClickEvent
-from app.core.security import ALGORITHM, SECRET_KEY
+from app.models import User, Product
+from app.core.security import ALGORITHM, SECRET_KEY, get_current_user
+
 
 router = APIRouter(prefix="/affiliates", tags=["affiliates"])
 
@@ -22,6 +24,33 @@ def get_optional_user_id(request: Request) -> Optional[int]:
         return user_id_raw
     except Exception:
         return None
+
+@router.post("/", response_model=AffiliateLink)
+def create_affiliate_link(
+    data: AffiliateLinkCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    # 1. Verificar que el producto existe y pertenece al usuario
+    product = session.get(Product, data.product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    
+    if product.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para editar este producto")
+
+    # 2. Crear el enlace
+    new_link = AffiliateLink(
+        platform_name=data.platform_name,
+        url=data.url,
+        product_id=data.product_id
+    )
+    
+    session.add(new_link)
+    session.commit()
+    session.refresh(new_link)
+    return new_link
+
 
 @router.get("/go/{link_id}")
 def redirect_and_track(
@@ -45,3 +74,45 @@ def redirect_and_track(
     session.commit()
     
     return RedirectResponse(url=link.url)
+
+
+
+@router.get("/product/{product_id}", response_model=list[AffiliateLink])
+def get_product_links(
+    product_id: int,
+    session: Session = Depends(get_session)
+):
+    """
+    Retorna todos los enlaces de afiliados de un producto específico.
+    Este es público para que los compradores vean dónde comprar.
+    """
+    statement = select(AffiliateLink).where(AffiliateLink.product_id == product_id, AffiliateLink.is_active == True)
+    links = session.exec(statement).all()
+    return links
+
+
+
+@router.get("/analytics/{product_id}")
+def get_product_analytics(
+    product_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    # Verificar propiedad
+    product = session.get(Product, product_id)
+    if not product or product.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Acceso denegado")
+
+    stats = []
+    for link in product.affiliate_links:
+        stats.append({
+            "platform": link.platform_name,
+            "total_clicks": len(link.clicks),
+            "unique_users": len(set(c.user_id for c in link.clicks if c.user_id))
+        })
+    
+    return {
+        "product": product.name,
+        "analytics": stats
+    }
+
