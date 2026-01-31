@@ -14,8 +14,8 @@ class Product(SQLModel, table=True):
     title: str
     description: str
     price: float
-    image_url: str
-    affiliate_link: str
+    image_url: Optional[str] = Field(default="https://via.placeholder.com/150")
+    affiliate_link: Optional[str] = Field(default=None)
     category: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     @property

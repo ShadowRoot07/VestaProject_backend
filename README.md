@@ -172,3 +172,15 @@ http POST http://127.0.0.1:8000/products/ \
     affiliate_link="https://amazon.com/placeholder" \
     "Authorization: Bearer $TOKEN"
 ```
+
+```bash
+http PATCH :8000/affiliates/1 \
+    platform_name="Amazon Pro" \
+    url="https://amazon.com/nueva-url" \
+    "Authorization: Bearer $TOKEN"
+```
+
+```bash
+http DELETE :8000/affiliates/1 "Authorization: Bearer $TOKEN"
+```
+

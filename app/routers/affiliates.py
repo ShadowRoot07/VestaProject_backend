@@ -121,3 +121,44 @@ def get_product_analytics(
         "analytics": stats
     }
 
+
+@router.patch("/{link_id}", response_model=AffiliateLink)
+def update_affiliate_link(
+    link_id: int,
+    data: AffiliateLinkCreate, # Reutilizamos el esquema de creación
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    link = session.get(AffiliateLink, link_id)
+    if not link:
+        raise HTTPException(status_code=404, detail="Enlace no encontrado")
+    
+    # Verificar que el producto del link pertenece al usuario
+    if link.product.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso")
+
+    # Actualizar campos
+    link.platform_name = data.platform_name
+    link.url = data.url
+    
+    session.add(link)
+    session.commit()
+    session.refresh(link)
+    return link
+
+@router.delete("/{link_id}")
+def deactivate_affiliate_link(
+    link_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    link = session.get(AffiliateLink, link_id)
+    if not link or link.product.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    # En lugar de borrar de la DB, lo desactivamos (Soft Delete)
+    link.is_active = False
+    session.add(link)
+    session.commit()
+    return {"message": "Enlace desactivado correctamente"}
+
