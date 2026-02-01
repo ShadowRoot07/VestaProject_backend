@@ -37,174 +37,157 @@
 
 ## comandos:
 
+1. Authentication & Profile (The Basics)
+
+Primero creamos identidad para obtener el acceso.
+ 
+    * Register a user:
+
 ```bash
-http --form POST http://127.0.0.1:8000/auth/token \
-    username=ShadowRoot07 \
-    password=tupassword123
+http POST :8000/auth/register username="GhostShell_07" email="ghost@vesta.project" password="password123"
 ```
 
+    * Login (Get Token):
+
 ```bash
-export TOKEN="pega_aquí_tu_access_token"
+http --form POST :8000/auth/token username="GhostShell_07" password="password123"
 ```
 
-* **PUT:**
+    * Set Token Variable:
 
 ```bash
-http PUT http://127.0.0.1:8000/products/1 \
-    title="Producto Actualizado" \
-    description="Nueva descripción con mejoras" \
-    price:=99.99 \
-    image_url="http://link.com/foto.jpg" \
-    affiliate_link="http://amazon.com/ref" \
-    category="Ofertas" \
-    "Authorization: Bearer $TOKEN"
+export TOKEN="tu_token_aqui"
 ```
 
-* **DELETE:**
+    * Update My Profile:
 
 ```bash
-http DELETE http://127.0.0.1:8000/products/1 \
-    "Authorization: Bearer $TOKEN"
+http PUT :8000/users/me bio="Backend Developer & Neovim Enthusiast" website="https://github.com/ShadowRoot07" "Authorization: Bearer $TOKEN"
 ```
 
+    * View Public Profile:
 ```bash
-# Buscar solo productos de tecnología
-http GET "http://127.0.0.1:8000/products?category=Tecnología"
-
-# Buscar productos que tengan la palabra 'Gamer'
-http GET "http://127.0.0.1:8000/products?search=Gamer"
-
-# Pedir solo los primeros 5 productos
-http GET "http://127.0.0.1:8000/products?limit=5"
+http GET :8000/users/GhostShell_07
 ```
 
+2. Catalog Setup (Categories)
 
+
+Sin categorías no hay productos en tu nueva estructura relacional.
+
+    * Create a Category:
 ```bash
-http PUT http://127.0.0.1:8000/products/comments/1 \
-    content="Este es mi comentario editado y corregido." \
-    "Authorization: Bearer $TOKEN"
+http POST :8000/categories name="Technology" slug="tech" description="Gadgets and peripherals"
 ```
 
-* comando para ver los mejores productos (con mas likes):
+    * List All Categories:
 
 ```bash
-# Obtener el top 10 de productos más populares
-http GET http://127.0.0.1:8000/products/trending
+http GET :8000/categories
 ```
 
-* comando para crear comentarios:
+3. Inventory Management (Products)
+
+Ahora que tenemos category_id=1, podemos crear productos.
+
+    * Create a Product:
+    (Nota: Ya no enviamos "category" como texto, enviamos category_id)
 
 ```bash
-http POST http://127.0.0.1:8000/products/1/comments \
-    content="¡Este producto me encantó! Muy recomendado." \
-    "Authorization: Bearer $TOKEN"
+http POST :8000/products title="Logitech G502" description="Best selling gaming mouse" price:=49.99 category_id=1 "Authorization: Bearer $TOKEN"
 ```
 
-```bash
-# Buscar Laptops entre 500 y 1500 dólares, ordenadas por la más barata
-http GET "http://127.0.0.1:8000/search?q=Laptop&min_price=500&max_price=1500&sort_by=lowest_price"
+    * Update a Product:
 
-# Solo ver productos que cuesten menos de 100 dólares
-http GET "http://127.0.0.1:8000/search?max_price=100"
+```bash
+http PUT :8000/products/1 title="Updated Product" price:=59.99 category_id=1 "Authorization: Bearer $TOKEN"
+````
+
+    * Delete a Product:
+
+```bash
+http DELETE :8000/products/1 "Authorization: Bearer $TOKEN"
 ```
 
-* comando para actualizar perfil creado.
+4. Search & Discovery
+
+Consultas para los compradores.
+
+    * List Products (with pagination):
 
 ```bash
-http PUT http://127.0.0.1:8000/users/me \
-    bio="ShadowRoot07 | Backend Developer & Neovim Enthusiast" \
-    website="https://github.com/ShadowRoot07" \
-    "Authorization: Bearer $TOKEN"
-```
-
-* Comando GET para ver perfil:
-
-```bash
-http GET http://127.0.0.1:8000/users/ShadowRoot07
-```
-
-```bash
-http POST http://127.0.0.1:8000/affiliates/ \
-    platform_name="Amazon" \
-    url="https://www.amazon.com/ejemplo-producto-afiliado" \
-    product_id=1 \
-    "Authorization: Bearer $TOKEN"
-```
-
-```bash
-http GET http://127.0.0.1:8000/affiliates/go/1
-```
-
-```bash
-http GET http://127.0.0.1:8000/affiliates/go/1 "Authorization: Bearer $TOKEN"
-```
-
-```bash
-http GET http://127.0.0.1:8000/affiliates/product/1
-```
-
-```bash
-http GET http://127.0.0.1:8000/affiliates/analytics/1 "Authorization: Bearer $TOKEN"
-```
-
-```bash
-http POST http://127.0.0.1:8000/auth/register \
-    username="GhostShell_07" \
-    email="ghost@vesta.project" \
-    password="password123"
-```
-
-```bash
-http GET :8000/users/profile "Authorization: Bearer $TOKEN"
+http GET :8000/products?limit=5&offset=0
 ```
 
 
-```bash
-http POST http://127.0.0.1:8000/products/ \
-    title="Teclado Ghost" \
-    description="Teclado especial para GhostShell_07" \
-    price=50.0 \
-    category="Tech" \
-    image_url="https://via.placeholder.com/150" \
-    affiliate_link="https://amazon.com/placeholder" \
-    "Authorization: Bearer $TOKEN"
-```
+    * Advanced Search (Filters):
 
 ```bash
-http PATCH :8000/affiliates/1 \
-    platform_name="Amazon Pro" \
-    url="https://amazon.com/nueva-url" \
-    "Authorization: Bearer $TOKEN"
+http GET ":8000/search?q=Logitech&min_price=10&max_price=100&sort_by=lowest_price"
+```
+    
+    * Get Trending (Most Liked):
+    (Nota: Este endpoint debe estar implementado en tu router de productos)
+```bash
+http GET :8000/products/trending
 ```
 
+5. Affiliate System (The Core Business)
+
+Aquí es donde rastreamos el dinero.
+    
+    * Create Affiliate Link:
+
+```bash
+http POST :8000/affiliates platform_name="Amazon" url="https://amazon.com/mouse-ref" product_id=1 "Authorization: Bearer $TOKEN"
+```
+
+    * Redirect & Track Click (Public):
+
+```bash
+http GET :8000/affiliates/go/1
+```
+
+    * Get Links for a Specific Product:
+```bahs
+http GET :8000/affiliates/product/1
+```
+
+    * Analyze Link Clicks (Owner Only):
+```bash
+http GET :8000/affiliates/analytics/1 "Authorization: Bearer $TOKEN"
+```
+
+    * Deactivate Link (Soft Delete):
 ```bash
 http DELETE :8000/affiliates/1 "Authorization: Bearer $TOKEN"
 ```
 
-```bash
-http POST http://127.0.0.1:8000/categories/ \
-    name="Tecnología" \
-    slug="tech" \
-    description="Gadgets y periféricos para entusiastas"
-```
+6. Social (Comments & Interactions)
+
+    * Post a Comment:
 
 ```bash
-http GET http://127.0.0.1:8000/categories/
+http POST :8000/products/1/comments content="Highly recommended!" "Authorization: Bearer $TOKEN"
 ```
+
+    * Edit a Comment:
 
 ```bash
-http POST http://127.0.0.1:8000/products \
-    name="Mouse Logitech G502" \
-    description="El mouse más vendido" \
-    price=49.99 \
-    category_id=1 \
-    "Authorization: Bearer $TOKEN"
+http PUT :8000/products/comments/1 content="Corrected comment content." "Authorization: Bearer $TOKEN"
 ```
 
-* **Comando especial para limpiar la base de datos:** solo usarlo en casos especoales o de emergencia.
+🛠️ Mantenimiento de Emergencia
 
+    * Reset Database (The Red Button):
 ```bash
-python reset_db.python
+python reset_db.py
 ```
 
-Esto ehecuta el Script especial encargado de eso, **USAR CON CUIDADO!!**.
+### Notas de ShadowRoot07:
+    * URL Corta: En local puedes usar :8000 en lugar de http://127.0.0.1:8000, HTTPie lo entiende perfectamente.
+
+    * Price format: Usa price:=49.99 (con los dos puntos) para asegurar que HTTPie lo envíe como un número (float) y no como un string.
+    * Consistency: Ahora que todo está en inglés, tu Swagger (/docs) se verá mil veces más profesional.
+
+

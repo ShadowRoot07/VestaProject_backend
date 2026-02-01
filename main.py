@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel
 from app.database import create_db_and_tables
 from app.routers import auth, products, users, search, affiliates, categories
@@ -24,6 +25,19 @@ SQLModel.metadata.naming_convention = {
 }
 
 app = FastAPI(title="VestaAPI")
+
+origins = [
+    "http://localhost:3000", # Tu futuro frontend
+    "https://tu-dominio-vesta.com",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"], # Permite GET, POST, PUT, DELETE, etc.
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 def on_startup():
