@@ -4,6 +4,7 @@ from typing import List
 from app.database import get_session
 from app.models.products import Product
 from app.models.users import User
+from app.schemas.products import ProductCreate, ProductUpdate # New Imports
 from app.core.security import get_current_user
 from sqlalchemy.exc import IntegrityError
 
@@ -19,23 +20,25 @@ def get_products(
 
 @router.post("", response_model=Product, status_code=status.HTTP_201_CREATED)
 def create_product(
-    product_data: Product,
+    product_in: ProductCreate, # Using sanitized schema
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    product_data.owner_id = current_user.id
-    session.add(product_data)
+    # Convert schema to DB model and attach owner
+    new_product = Product(**product_in.model_dump(), owner_id=current_user.id)
+    
+    session.add(new_product)
     try:
         session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid category_id: {product_data.category_id} does not exist."
+            detail=f"Invalid category_id: {product_in.category_id} does not exist."
         )
-    
-    session.refresh(product_data)
-    return product_data
+
+    session.refresh(new_product)
+    return new_product
 
 @router.delete("/{product_id}")
 def delete_product(
@@ -49,7 +52,7 @@ def delete_product(
 
     if product.owner_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions to delete this product"
         )
 
