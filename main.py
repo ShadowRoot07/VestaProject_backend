@@ -3,19 +3,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel
 from app.database import create_db_and_tables
 from app.routers import auth, products, users, search, affiliates, categories
-from app.models.users import UserPublic
-from app.models.products import Product
-from app.models.affiliates import AffiliateLink, ClickEvent
-from app.models.categories import Category
 
+app = FastAPI(title="VestaAPI")
 
-Category.model_rebuild() 
-Product.model_rebuild()
-AffiliateLink.model_rebuild()
-UserPublic.model_rebuild()
+# CORS Setup
+origins = ["http://localhost:3000", "https://your-vesta-domain.com"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-
-# Configuración de convenciones (mantenla aquí)
+# Database Naming Convention
 SQLModel.metadata.naming_convention = {
     "ix": "ix_%(column_0_label)s",
     "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -24,29 +25,15 @@ SQLModel.metadata.naming_convention = {
     "pk": "pk_%(table_name)s"
 }
 
-app = FastAPI(title="VestaAPI")
-
-origins = [
-    "http://localhost:3000", # Tu futuro frontend
-    "https://tu-dominio-vesta.com",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"], # Permite GET, POST, PUT, DELETE, etc.
-    allow_headers=["*"],
-)
-
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
 
-# Inclusión de routers
+# Include Routers
 app.include_router(auth.router)
 app.include_router(products.router)
 app.include_router(users.router)
 app.include_router(search.router)
 app.include_router(affiliates.router)
 app.include_router(categories.router)
+

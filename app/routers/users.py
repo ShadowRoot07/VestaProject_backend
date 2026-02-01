@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from typing import List
 from app.database import get_session
-from app.models import User, Product, UserPublic, UserUpdate
+from app.models.users import User
+from app.models.products import Product
+from app.schemas.users import UserPublic, UserUpdate # Imported from schemas
 from app.core.security import get_current_user
 from sqlalchemy.orm import selectinload
 
@@ -13,13 +15,11 @@ def get_my_products(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all products owned by the authenticated user"""
     statement = select(Product).where(Product.owner_id == current_user.id)
     return session.exec(statement).all()
 
 @router.get("/me", response_model=User)
 def get_my_profile(current_user: User = Depends(get_current_user)):
-    """Get basic profile info of the authenticated user"""
     return current_user
 
 @router.put("/me", response_model=UserPublic)
@@ -28,7 +28,6 @@ def update_my_profile(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """Update authenticated user profile dynamically"""
     update_dict = user_data.model_dump(exclude_unset=True)
 
     for key, value in update_dict.items():
@@ -49,7 +48,6 @@ def update_my_profile(
 
 @router.get("/{username}", response_model=UserPublic)
 def get_user_profile(username: str, session: Session = Depends(get_session)):
-    """Public profile view for any user"""
     statement = select(User).where(User.username == username).options(selectinload(User.products))
     user = session.exec(statement).first()
 

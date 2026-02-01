@@ -1,14 +1,15 @@
 from .interactions import ProductLike
-from .users import User, UserPublic, UserUpdate
+from .users import User
 from .products import Product, Comment
-from .affiliates import AffiliateLink
-# Esto fuerza a SQLModel a conectar los cables internos 
-# de las relaciones 'back_populates'
+from .affiliates import AffiliateLink, ClickEvent
+from .categories import Category
+
+# Rebuild internal SQLModel relations
 User.model_rebuild()
 Product.model_rebuild()
 Comment.model_rebuild()
 AffiliateLink.model_rebuild()
+Category.model_rebuild()
 
-# Exportamos para que main.py los encuentre
-__all__ = ["User", "Product", "Comment", "ProductLike", "UserPublic", "UserUpdate", "AffiliateLink"]
+__all__ = ["User", "Product", "Comment", "ProductLike", "AffiliateLink", "ClickEvent", "Category"]
 
