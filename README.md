@@ -13,6 +13,7 @@
  * Actualización Inteligente: Endpoint PUT /me con lógica de actualización parcial (exclude_unset), permitiendo modificar el perfil sin afectar datos no enviados.
 
 ### Motor de Búsqueda y Filtros
+
  * Búsqueda Avanzada: Creación de un módulo de búsqueda (search.py) con filtros por texto, rangos de precio y categorías.
 
  * Ranking de Tendencias: Lógica para identificar y mostrar los productos con más interacciones (most likes).
@@ -38,165 +39,99 @@
 Este proyecto implementa una arquitectura de seguridad por capas para garantizar la integridad de los datos y la protección de los usuarios:
 
 * **Autenticación Robusta (JWT Hardening):** Implementación de tokens de acceso (JWT) con algoritmos de firma `HS256`. Se ha configurado una expiración estricta de 30 minutos para minimizar riesgos de secuestro de sesión (Session Hijacking).
+
 * **Protección de Credenciales (Passlib/Bcrypt):** Las contraseñas nunca se almacenan en texto plano. Se utiliza `Passlib` con el esquema `Bcrypt` para el hashing de contraseñas, asegurando una defensa sólida contra ataques de fuerza bruta y tablas de arcoíris.
+
 * **Sanitización de Entradas (Anti-XSS):** Uso de la librería `Bleach` integrada en los esquemas de Pydantic. Todas las entradas de texto (descripciones de productos, bios de usuarios, títulos) son filtradas para eliminar etiquetas HTML y scripts maliciosos, previniendo ataques de Cross-Site Scripting (XSS).
+
 * **Control de Acceso Basado en Roles (RBAC):** Sistema de permisos jerárquicos donde solo los usuarios con privilegios de Administrador (`is_admin: true`) pueden gestionar categorías y realizar tareas críticas de mantenimiento.
+
 * **Validación de Integridad de Datos:** Uso de validadores de Pydantic para asegurar que la información (precios, slugs, emails) cumpla con los formatos técnicos requeridos antes de procesar cualquier transacción en la base de datos.
 
 
 ## comandos:
 
-1. Authentication & Profile (The Basics)
+### Autenticación (Auth).
 
-Primero creamos identidad para obtener el acceso.
- 
-    * Register a user:
+* Registro de Usuario:
 
-```bash
-http POST :8000/auth/register username="GhostShell_07" email="ghost@vesta.project" password="password123"
+```
+http POST :8000/auth/register username="shadow" email="shadow@example.com" password="tu_password"
 ```
 
-    * Login (Get Token):
+* Login (Obtener Token):
 
-```bash
-http --form POST :8000/auth/token username="GhostShell_07" password="password123"
+```
+# Guarda el token en una variable para los siguientes comandos
+export TOKEN=$(http --form POST :8000/auth/login username="shadow" password="tu_password" | jq -r .access_token)
 ```
 
-    * Set Token Variable:
+### Productos (Products)
+* Listar Productos (Paginados):
 
-```bash
-export TOKEN="tu_token_aqui"
+```
+http GET :8000/products limit==10 offset==0
+
+Crear Producto (Requiere Token):
+http POST :8000/products Authorization:"Bearer $TOKEN" title="Laptop Gaming" description="Potente laptop" price:=1200 category_id:=1
 ```
 
-    * Update My Profile:
+### Eliminar Producto:
 
-```bash
-http PUT :8000/users/me bio="Backend Developer & Neovim Enthusiast" website="https://github.com/ShadowRoot07" "Authorization: Bearer $TOKEN"
+```
+http DELETE :8000/products/1 Authorization:"Bearer $TOKEN"
 ```
 
-    * View Public Profile:
-```bash
-http GET :8000/users/GhostShell_07
+###  Categorías (Categories)
+* Listar Categorías:
+
 ```
-
-2. Catalog Setup (Categories)
-
-
-Sin categorías no hay productos en tu nueva estructura relacional.
-
-    * Create a Category:
-```bash
-http POST :8000/categories name="Technology" slug="tech" description="Gadgets and peripherals"
-```
-
-    * List All Categories:
-
-```bash
 http GET :8000/categories
 ```
 
-3. Inventory Management (Products)
+* Crear Categoría (Solo Admin):
 
-Ahora que tenemos category_id=1, podemos crear productos.
-
-    * Create a Product:
-    (Nota: Ya no enviamos "category" como texto, enviamos category_id)
-
-```bash
-http POST :8000/products title="Logitech G502" description="Best selling gaming mouse" price:=49.99 category_id=1 "Authorization: Bearer $TOKEN"
+```
+http POST :8000/categories Authorization:"Bearer $TOKEN" name="Laptops" description="Equipos portátiles" slug="laptops"
 ```
 
-    * Update a Product:
+### Afiliados y Analytics (Affiliates)
 
-```bash
-http PUT :8000/products/1 title="Updated Product" price:=59.99 category_id=1 "Authorization: Bearer $TOKEN"
-````
+* Crear Enlace de Afiliado:
 
-    * Delete a Product:
-
-```bash
-http DELETE :8000/products/1 "Authorization: Bearer $TOKEN"
 ```
-
-4. Search & Discovery
-
-Consultas para los compradores.
-
-    * List Products (with pagination):
-
-```bash
-http GET :8000/products?limit=5&offset=0
+http POST :8000/affiliates Authorization:"Bearer $TOKEN" platform_name="Amazon" url="https://amazon.com/item" product_id:=1
 ```
 
 
-    * Advanced Search (Filters):
+* Simular un Click (Redirección):
 
-```bash
-http GET ":8000/search?q=Logitech&min_price=10&max_price=100&sort_by=lowest_price"
 ```
-    
-    * Get Trending (Most Liked):
-    (Nota: Este endpoint debe estar implementado en tu router de productos)
-```bash
-http GET :8000/products/trending
-```
-
-5. Affiliate System (The Core Business)
-
-Aquí es donde rastreamos el dinero.
-    
-    * Create Affiliate Link:
-
-```bash
-http POST :8000/affiliates platform_name="Amazon" url="https://amazon.com/mouse-ref" product_id=1 "Authorization: Bearer $TOKEN"
-```
-
-    * Redirect & Track Click (Public):
-
-```bash
 http GET :8000/affiliates/go/1
+
+Ver Analíticas del Producto:
+http GET :8000/affiliates/analytics/1 Authorization:"Bearer $TOKEN"
 ```
 
-    * Get Links for a Specific Product:
-```bahs
-http GET :8000/affiliates/product/1
+### Búsqueda y Perfil (Search & Users)
+
+* Búsqueda con Filtros:
+
+```
+http GET :8000/search q=="laptop" min_price==500 sort_by=="lowest_price"
 ```
 
-    * Analyze Link Clicks (Owner Only):
-```bash
-http GET :8000/affiliates/analytics/1 "Authorization: Bearer $TOKEN"
+* Ver mi Perfil:
+
+```
+http GET :8000/users/me Authorization:"Bearer $TOKEN"
 ```
 
-    * Deactivate Link (Soft Delete):
-```bash
-http DELETE :8000/affiliates/1 "Authorization: Bearer $TOKEN"
+* Actualizar mi Perfil:
+
+```
+http PUT :8000/users/me Authorization:"Bearer $TOKEN" bio="Nuevo bio para Vesta" website="https://shadowroot.dev"
 ```
 
-6. Social (Comments & Interactions)
-
-    * Post a Comment:
-
-```bash
-http POST :8000/products/1/comments content="Highly recommended!" "Authorization: Bearer $TOKEN"
-```
-
-    * Edit a Comment:
-
-```bash
-http PUT :8000/products/comments/1 content="Corrected comment content." "Authorization: Bearer $TOKEN"
-```
-
-🛠️ Mantenimiento de Emergencia
-
-    * Reset Database (The Red Button):
-```bash
-python reset_db.py
-```
-
-### Notas de ShadowRoot07:
-    * URL Corta: En local puedes usar :8000 en lugar de http://127.0.0.1:8000, HTTPie lo entiende perfectamente.
-
-    * Price format: Usa price:=49.99 (con los dos puntos) para asegurar que HTTPie lo envíe como un número (float) y no como un string.
-    * Consistency: Ahora que todo está en inglés, tu Swagger (/docs) se verá mil veces más profesional.
-
-
+### Nota
+> Para ejecutar estos comandos en Termux, asegúrate de tener instalados httpie y jq (pkg install httpie jq). El uso de :8000 es un atajo de HTTPie para http://localhost:8000.

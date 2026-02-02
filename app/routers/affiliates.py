@@ -19,9 +19,10 @@ def get_optional_user_id(request: Request) -> Optional[int]:
     try:
         token = auth_header.split(" ")[1]
         payload = jose.jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id_raw = payload.get("sub")
-        # Ensure we return an int if it's a numeric ID
-        return int(user_id_raw) if user_id_raw and str(user_id_raw).isdigit() else None
+        username = payload.get("sub")
+        # Buscamos el ID real basado en el username del token
+        user = session.exec(select(User).where(User.username == username)).first()
+        return user.id if user else None
     except Exception:
         return None
 

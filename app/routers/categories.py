@@ -17,16 +17,16 @@ def get_categories(session: Session = Depends(get_session)):
 
 @router.post("", response_model=Category, status_code=status.HTTP_201_CREATED)
 def create_category(
-    category: Category,
+    category_in: CategoryCreate,
     session: Session = Depends(get_session),
     current_admin: User = Depends(get_current_admin_user) 
 ):
     """
     Protected endpoint: Only users with is_admin=True can create categories.
     """
-    # Blindaje 1: Normalización de datos
-    category.slug = category.slug.lower().replace(" ", "-")
-    
+    new_category = Category(**category_in.model_dump())
+    new_category.slug = new_category.slug.lower().replace(" ", "-")
+
     # Blindaje 2: Validación de formato de slug (Solo letras, números y guiones)
     if not re.match(r'^[a-z0-9-]+$', category.slug):
         raise HTTPException(
