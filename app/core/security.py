@@ -4,7 +4,7 @@ import jose.jwt
 from sqlmodel import Session, select
 from app.database import get_session
 from app.models.users import User
-from .security_config import SECRET_KEY, ALGORITHM # Import actualizado
+from .security_config import SECRET_KEY, ALGORITHM 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
@@ -21,14 +21,11 @@ def get_current_user(
         payload = jose.jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
-            raise credentials_exception
     except jose.JWTError:
-        # Esto lanzará 401 si el token expiró (gracias al claim 'exp')
         raise credentials_exception
 
     user = session.exec(select(User).where(User.username == username)).first()
     
-    # Blindaje: Si el usuario no existe o está inactivo (is_active es del UserBase)
     if user is None:
         raise credentials_exception
     

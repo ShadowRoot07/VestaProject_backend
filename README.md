@@ -33,6 +33,15 @@
 
  * Corrección de Errores: Depuración de inconsistencias en la base de datos (migraciones manuales de columnas en Neon) y refinamiento del orden de rutas dinámicas.
  
+## Seguridad y Blindaje de la API
+
+Este proyecto implementa una arquitectura de seguridad por capas para garantizar la integridad de los datos y la protección de los usuarios:
+
+* **Autenticación Robusta (JWT Hardening):** Implementación de tokens de acceso (JWT) con algoritmos de firma `HS256`. Se ha configurado una expiración estricta de 30 minutos para minimizar riesgos de secuestro de sesión (Session Hijacking).
+* **Protección de Credenciales (Passlib/Bcrypt):** Las contraseñas nunca se almacenan en texto plano. Se utiliza `Passlib` con el esquema `Bcrypt` para el hashing de contraseñas, asegurando una defensa sólida contra ataques de fuerza bruta y tablas de arcoíris.
+* **Sanitización de Entradas (Anti-XSS):** Uso de la librería `Bleach` integrada en los esquemas de Pydantic. Todas las entradas de texto (descripciones de productos, bios de usuarios, títulos) son filtradas para eliminar etiquetas HTML y scripts maliciosos, previniendo ataques de Cross-Site Scripting (XSS).
+* **Control de Acceso Basado en Roles (RBAC):** Sistema de permisos jerárquicos donde solo los usuarios con privilegios de Administrador (`is_admin: true`) pueden gestionar categorías y realizar tareas críticas de mantenimiento.
+* **Validación de Integridad de Datos:** Uso de validadores de Pydantic para asegurar que la información (precios, slugs, emails) cumpla con los formatos técnicos requeridos antes de procesar cualquier transacción en la base de datos.
 
 
 ## comandos:
