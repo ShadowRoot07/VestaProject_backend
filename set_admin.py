@@ -15,5 +15,5 @@ def make_admin(username: str):
             print("Usuario no encontrado.")
 
 if __name__ == "__main__":
-    make_admin("ShadowRoot07")
+    make_admin("shadowroot")
 

@@ -3,6 +3,7 @@ from sqlmodel import Session, select
 from typing import List
 from app.database import get_session
 from app.models.categories import Category
+from app.schemas.categories import CategoryCreate
 from app.models.users import User
 from app.core.security import get_current_admin_user 
 from sqlalchemy.exc import IntegrityError
@@ -28,22 +29,22 @@ def create_category(
     new_category.slug = new_category.slug.lower().replace(" ", "-")
 
     # Blindaje 2: Validación de formato de slug (Solo letras, números y guiones)
-    if not re.match(r'^[a-z0-9-]+$', category.slug):
+    if not re.match(r'^[a-z0-9-]+$', new_category.slug):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Slug must contain only lowercase letters, numbers, and hyphens."
         )
 
     try:
-        session.add(category)
+        session.add(new_category)
         session.commit()
-        session.refresh(category)
-        return category
+        session.refresh(new_category)
+        return new_category
     except IntegrityError:
         session.rollback()
         # Blindaje 3: Error informativo para el cliente
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Category with slug '{category.slug}' or name '{category.name}' already exists."
+            detail=f"Category with slug '{new_category.slug}' or name '{new_category.name}' already exists."
         )
 

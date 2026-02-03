@@ -1,137 +1,144 @@
-# VestaProject API (backend).
+# VestaProject API - Backend Professional
 
-## Notas en tener en cuenta:
+Bienvenido a la joya de la corona de **ShadowRoot07**. **VestaProject** es una API REST escalable, segura y altamente modular construida con **FastAPI** y **SQLModel**, diseñada para manejar una comunidad de productos con sistema de afiliados, reputación social y blindaje contra ataques comunes.
 
-## Sistema de Identidad Social (Módulo de Usuarios)
+---
 
- * Perfil Enriquecido: Se extendió el modelo de usuario para incluir bio, profile_pic, website y estadísticas de actividad.
+## Características Principales
 
- * Reputación Dinámica: Implementación de un algoritmo para calcular la "reputación" del usuario basada en el total de likes acumulados en todas sus publicaciones.
+### Sistema de Identidad Social
+* **Perfil Enriquecido:** Incluye biografía, fotos de perfil, enlaces externos y estadísticas de actividad.
 
- * Seguridad de Datos: Integración de esquemas UserPublic para filtrar información sensible (como contraseñas) en los endpoints públicos.
+* **Reputación Dinámica:** Algoritmo integrado que calcula el prestigio del usuario basado en los *likes* globales acumulados en sus publicaciones.
 
- * Actualización Inteligente: Endpoint PUT /me con lógica de actualización parcial (exclude_unset), permitiendo modificar el perfil sin afectar datos no enviados.
+* **Seguridad de Datos:** Filtrado estricto mediante esquemas `UserPublic` para evitar fugas de información sensible (como hashes de contraseñas).
+
+* **Actualización Inteligente:** Endpoint `PUT /me` con lógica de actualización parcial (`exclude_unset`), permitiendo modificar el perfil de forma granular.
 
 ### Motor de Búsqueda y Filtros
+* **Búsqueda Avanzada:** Módulo dedicado (`search.py`) con filtros por texto, rangos de precio y categorías.
 
- * Búsqueda Avanzada: Creación de un módulo de búsqueda (search.py) con filtros por texto, rangos de precio y categorías.
+* **Ranking de Tendencias:** Lógica para identificar y mostrar los productos con más interacciones (*most likes*).
 
- * Ranking de Tendencias: Lógica para identificar y mostrar los productos con más interacciones (most likes).
+* **Optimización SQL:** Uso de `selectinload` de SQLAlchemy para evitar el problema de N+1 consultas al cargar relaciones complejas.
 
- * Optimización de Consultas: Uso de selectinload de SQLAlchemy para evitar el problema de N+1 consultas al cargar productos y sus relaciones.
+### Gestión de Feedback y Afiliados
+* **CRUD Completo:** Operaciones robustas de creación, lectura y borrado con validación estricta de autoría.
 
-### Gestión de Productos y Feedback
+* **Sistema de Feedback:** Comentarios y sistema de "Likes" con lógica de alternancia (*toggle*).
 
- * CRUD Completo: Finalización de las operaciones de creación, lectura, actualización y borrado de productos con validación de autoría.
+* **Módulo de Afiliados:** Seguimiento de clics y analíticas por plataforma (Amazon, eBay, etc.) para dueños de productos.
 
- * Sistema de Feedback: Implementación de un sistema de comentarios con soporte para edición (PUT) y eliminación, junto con un sistema de "Likes" con lógica de alternancia (toggle).
+---
 
-### Arquitectura y Estabilidad
+## Seguridad y Blindaje (Layered Defense)
 
- * Modularización: Desacoplamiento total de rutas en módulos independientes (auth, products, users, search).
+| Capa | Tecnología | Propósito |
+| :--- | :--- | :--- |
+| **Autenticación** | JWT (HS256) | Sesiones seguras con expiración estricta de 30 min. |
+| **Hashing** | Passlib / Bcrypt | Protección contra fuerza bruta y tablas arcoíris. |
+| **Sanitización** | Bleach | Prevención activa de ataques Cross-Site Scripting (XSS). |
+| **Autorización** | RBAC | Control de acceso basado en roles (Admin vs User). |
+| **Validación** | Pydantic V2 | Integridad total de tipos y formatos de datos. |
 
- * Resolución de Dependencias: Solución técnica a importaciones circulares complejas entre modelos de Pydantic/SQLModel mediante reconstrucción de modelos en el punto de entrada (main.py).
+---
 
- * Corrección de Errores: Depuración de inconsistencias en la base de datos (migraciones manuales de columnas en Neon) y refinamiento del orden de rutas dinámicas.
- 
-## Seguridad y Blindaje de la API
+## Instalación y Configuración
 
-Este proyecto implementa una arquitectura de seguridad por capas para garantizar la integridad de los datos y la protección de los usuarios:
+**Requisitos Previos:**
+* Python 3.12+
 
-* **Autenticación Robusta (JWT Hardening):** Implementación de tokens de acceso (JWT) con algoritmos de firma `HS256`. Se ha configurado una expiración estricta de 30 minutos para minimizar riesgos de secuestro de sesión (Session Hijacking).
+* Termux (si se ejecuta en móvil) o cualquier entorno Linux.
 
-* **Protección de Credenciales (Passlib/Bcrypt):** Las contraseñas nunca se almacenan en texto plano. Se utiliza `Passlib` con el esquema `Bcrypt` para el hashing de contraseñas, asegurando una defensa sólida contra ataques de fuerza bruta y tablas de arcoíris.
+* PostgreSQL (Recomendado: Neon.tech).
 
-* **Sanitización de Entradas (Anti-XSS):** Uso de la librería `Bleach` integrada en los esquemas de Pydantic. Todas las entradas de texto (descripciones de productos, bios de usuarios, títulos) son filtradas para eliminar etiquetas HTML y scripts maliciosos, previniendo ataques de Cross-Site Scripting (XSS).
+**Pasos:**
+1. **Clonar el repositorio.**
 
-* **Control de Acceso Basado en Roles (RBAC):** Sistema de permisos jerárquicos donde solo los usuarios con privilegios de Administrador (`is_admin: true`) pueden gestionar categorías y realizar tareas críticas de mantenimiento.
+2. **Instalar dependencias:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-* **Validación de Integridad de Datos:** Uso de validadores de Pydantic para asegurar que la información (precios, slugs, emails) cumpla con los formatos técnicos requeridos antes de procesar cualquier transacción en la base de datos.
+3. **Configurar variables de entorno:** Crea un archivo .env con SECRET_KEY, ALGORITHM y DATABASE_URL.
 
+4. **Aplicar migraciones:**
 
-## comandos:
+    ```bash
+    alembic upgrade head
+    ```
 
-### Autenticación (Auth).
+5. **Iniciar Servidor:**
 
-* Registro de Usuario:
+    ```bash
+    uvicorn main:app --reload
+    ```
 
-```
-http POST :8000/auth/register username="shadow" email="shadow@example.com" password="tu_password"
-```
+## Guía de Uso (Comandos HTTPie)
+
+**Autenticación**
+
+* Registro:
+
+    ```bash
+    http POST :8000/auth/register username="shadow" email="shadow@example.com" password="tu_password"
+    ```
 
 * Login (Obtener Token):
 
-```
-# Guarda el token en una variable para los siguientes comandos
-export TOKEN=$(http --form POST :8000/auth/login username="shadow" password="tu_password" | jq -r .access_token)
-```
+    ```bash
+    export TOKEN=$(http --form POST :8000/auth/login username="shadow" password="tu_password" | jq -r .access_token)
+    ```
 
-### Productos (Products)
-* Listar Productos (Paginados):
+**Productos y Categorías**
 
-```
-http GET :8000/products limit==10 offset==0
+* Listar Productos:
 
-Crear Producto (Requiere Token):
-http POST :8000/products Authorization:"Bearer $TOKEN" title="Laptop Gaming" description="Potente laptop" price:=1200 category_id:=1
-```
+    ```bash
+    http GET :8000/products limit==10 offset==0
+    ```
 
-### Eliminar Producto:
+* Crear Producto:
 
-```
-http DELETE :8000/products/1 Authorization:"Bearer $TOKEN"
-```
-
-###  Categorías (Categories)
-* Listar Categorías:
-
-```
-http GET :8000/categories
-```
+    ```bash
+    http POST :8000/products Authorization:"Bearer $TOKEN" title="Laptop" description="Potente" price:=1200 category_id:=1
+    ```
 
 * Crear Categoría (Solo Admin):
 
-```
-http POST :8000/categories Authorization:"Bearer $TOKEN" name="Laptops" description="Equipos portátiles" slug="laptops"
-```
+    ```bash
+    http POST :8000/categories Authorization:"Bearer $TOKEN" name="Laptops" slug="laptops"
+    ```
 
-### Afiliados y Analytics (Affiliates)
+**Analíticas y Búsqueda**
 
-* Crear Enlace de Afiliado:
+* Ver Analytics:
 
-```
-http POST :8000/affiliates Authorization:"Bearer $TOKEN" platform_name="Amazon" url="https://amazon.com/item" product_id:=1
-```
+    ```bash
+    http GET :8000/affiliates/analytics/1 Authorization:"Bearer $TOKEN"
+    ```
 
+* Búsqueda Filtrada:
 
-* Simular un Click (Redirección):
+    ```bash
+    http GET :8000/search q=="laptop" min_price==500 sort_by=="lowest_price"
+    ```
 
-```
-http GET :8000/affiliates/go/1
+## Arquitectura del Proyecto.
 
-Ver Analíticas del Producto:
-http GET :8000/affiliates/analytics/1 Authorization:"Bearer $TOKEN"
-```
-
-### Búsqueda y Perfil (Search & Users)
-
-* Búsqueda con Filtros:
-
-```
-http GET :8000/search q=="laptop" min_price==500 sort_by=="lowest_price"
-```
-
-* Ver mi Perfil:
-
-```
-http GET :8000/users/me Authorization:"Bearer $TOKEN"
+```text 
+.
+├── app/
+│   ├── core/      # Seguridad, utilidades de auth y config
+│   ├── models/    # Modelos SQLModel (Tablas de DB)
+│   ├── routers/   # Endpoints divididos por módulos lógicos
+│   ├── schemas/   # Esquemas Pydantic (Validación y Sanitización)
+│   └── database.py# Configuración de la sesión y motor de DB
+├── migrations/    # Control de versiones de base de datos (Alembic)
+├── main.py        # Punto de entrada de la aplicación FastAPI
+└── requirements.txt
 ```
 
-* Actualizar mi Perfil:
+**Nota para usuarios de Termux:** Instala las herramientas de prueba con pkg install httpie jq.
 
-```
-http PUT :8000/users/me Authorization:"Bearer $TOKEN" bio="Nuevo bio para Vesta" website="https://shadowroot.dev"
-```
-
-### Nota
-> Para ejecutar estos comandos en Termux, asegúrate de tener instalados httpie y jq (pkg install httpie jq). El uso de :8000 es un atajo de HTTPie para http://localhost:8000.
+### Desarrollado con ❤️ por ShadowRoot07 - 2026.

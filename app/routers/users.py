@@ -44,6 +44,5 @@ def update_my_profile(
         "products_count": len(current_user.products),
         "products": current_user.products
     }
-
 # ... (get_user_profile remains same) ...
 

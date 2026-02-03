@@ -12,7 +12,7 @@ from app.core.security import ALGORITHM, SECRET_KEY, get_current_user
 
 router = APIRouter(prefix="/affiliates", tags=["Affiliates"])
 
-def get_optional_user_id(request: Request) -> Optional[int]:
+def get_optional_user_id(request: Request, session: Session) -> Optional[int]:
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         return None
@@ -54,12 +54,13 @@ def redirect_and_track(
     link = session.get(AffiliateLink, link_id)
     if not link or not link.is_active:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid or inactive link")
-
+    
     new_click = ClickEvent(
         link_id=link.id,
-        user_id=get_optional_user_id(request),
+        user_id=get_optional_user_id(request, session),
         referrer=request.headers.get("referer")
     )
+
     session.add(new_click)
     session.commit()
     return RedirectResponse(url=link.url)

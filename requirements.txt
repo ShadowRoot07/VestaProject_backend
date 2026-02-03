@@ -1,0 +1,20 @@
+# Server & Framework
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+
+# DataBase & Modelado
+sqlmodel>=0.0.16
+psycopg>=3.1
+alembic>=1.13.1
+
+# Security and authentication
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.9
+
+# Sanitization and validation
+bleach>=6.1.0
+pydantic[email]>=2.6.1
+
+# Utilities
+python-dotenv>=1.0.1
