@@ -5,7 +5,11 @@ from passlib.context import CryptContext
 from .security_config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 # Configuración para el hashing de contraseñas
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["bcrypt"], 
+    deprecated="auto",
+    truncate_error=False
+)
 
 # --- Funciones de Contraseñas ---
 def hash_password(password: str) -> str:
