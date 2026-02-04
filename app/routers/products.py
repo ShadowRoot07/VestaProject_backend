@@ -4,7 +4,8 @@ from typing import List
 from app.database import get_session
 from app.models.products import Product
 from app.models.users import User
-from app.schemas.products import ProductCreate, ProductUpdate # New Imports
+from app.schemas.products import ProductCreate, ProductUpdate
+from app.models.interactions import ProductLike
 from app.core.security import get_current_user
 from sqlalchemy.exc import IntegrityError
 
