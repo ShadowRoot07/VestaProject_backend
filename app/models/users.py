@@ -13,6 +13,7 @@ class User(SQLModel, table=True):
     bio: Optional[str] = Field(default="Hello! I am a new developer on Vesta.")
     profile_pic: Optional[str] = Field(default="https://default-path.com/avatar.png")
     website: Optional[str] = None
+    reputation: int = Field(default=0)
     is_admin: bool = Field(default=False) # Adding the admin flag we discussed
 
     products: List["Product"] = Relationship(back_populates="owner")

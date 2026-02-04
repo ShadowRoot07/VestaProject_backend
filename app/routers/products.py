@@ -60,3 +60,42 @@ def delete_product(
     session.commit()
     return {"message": "Product deleted successfully"}
 
+
+@router.post("/{product_id}/like", status_code=status.HTTP_200_OK)
+def toggle_product_like(
+    product_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    product = session.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    owner = session.get(User, product.owner_id)
+    
+    statement = select(ProductLike).where(
+        ProductLike.user_id == current_user.id,
+        ProductLike.product_id == product_id
+    )
+    existing_like = session.exec(statement).first()
+
+    if existing_like:
+        session.delete(existing_like)
+        if owner: owner.reputation -= 1 # Resta reputación si quitan el like
+        message = "Like removed"
+    else:
+        new_like = ProductLike(user_id=current_user.id, product_id=product_id)
+        session.add(new_like)
+        if owner: owner.reputation += 1 # Suma reputación si dan like
+        message = "Like added"
+
+    session.commit()
+    session.refresh(product)
+    if owner: session.refresh(owner)
+
+    return {
+        "message": message,
+        "likes_count": product.likes_count,
+        "owner_reputation": owner.reputation if owner else 0
+    }
+
