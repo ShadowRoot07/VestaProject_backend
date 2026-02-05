@@ -7,7 +7,7 @@ from app.routers import auth, products, users, search, affiliates, categories, c
 app = FastAPI(title="VestaAPI")
 
 # CORS Setup
-origins = ["http://localhost:3000", "http://localhost:5173", "https://your-vesta-domain.com"]
+origins = ["http://localhost:3000", "http://localhost:5173", "https://your-vesta-domain.com", "*"]
 
 app.add_middleware(
     CORSMiddleware,
