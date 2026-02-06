@@ -22,4 +22,5 @@ class User(SQLModel, table=True):
         link_model=ProductLike
     )
     comments: List["Comment"] = Relationship(back_populates="user")
+    balance: float = Field(default=0.0)
 

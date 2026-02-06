@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from typing import List
 from app.database import get_session
 from app.models.users import User
 from app.models.products import Product
-from app.schemas.users import UserPublic, UserUpdate 
+from app.schemas.users import UserPublic, UserUpdate
+from app.models.interactions import CartItem, Purchase, ProductLike
 from app.core.security import get_current_user
 from sqlalchemy.orm import selectinload
 
@@ -12,9 +13,21 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 # ... (get_my_products remains same) ...
 
-@router.get("/me", response_model=User)
-def get_my_profile(current_user: User = Depends(get_current_user)):
-    return current_user
+@router.get("/me", response_model=UserPublic)
+def get_my_profile(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    cart_count = session.exec(select(func.count()).where(CartItem.user_id == current_user.id)).one()
+    likes_count = session.exec(select(func.count()).where(ProductLike.user_id == current_user.id)).one()
+    purchases_count = session.exec(select(func.count()).where(Purchase.user_id == current_user.id)).one()
+
+    user_data = UserPublic.model_validate(current_user)
+    user_data.cart_count = cart_count
+    user_data.likes_count = likes_count
+    user_data.purchases_count = purchases_count
+
+    return user_data
 
 @router.put("/me", response_model=UserPublic)
 def update_my_profile(

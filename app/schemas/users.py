@@ -8,6 +8,7 @@ class UserBase(BaseModel):
     bio: Optional[str] = None
     profile_pic: Optional[str] = None
     website: Optional[str] = None
+    balance: float
 
     @field_validator("username", "bio")
     @classmethod
@@ -36,10 +37,12 @@ class UserUpdate(BaseModel):
 
 class UserPublic(UserBase):
     id: int
-    total_reputation: int
-    products_count: int
-    products: List = []
+    reputation: int # Cambiado para que coincida con tu modelo User
+    is_admin: bool
+    # Campos dinámicos para el Dashboard de Perfil
+    cart_count: int = 0
+    likes_count: int = 0
+    purchases_count: int = 0
 
     class Config:
         from_attributes = True
-
