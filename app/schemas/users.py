@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, field_validator
-from typing import Optional, List
+from typing import Optional, List, Any
 import bleach
 from app.models.products import Product
 
@@ -36,14 +36,21 @@ class UserUpdate(BaseModel):
             return bleach.clean(v, tags=[], strip=True).strip()
         return v
 
+# app/schemas/users.py
+from pydantic import BaseModel, EmailStr, field_validator
+from typing import Optional, List, Any # Agregamos Any
+
+# ... (tus otras clases UserBase, etc)
+
 class UserPublic(UserBase):
     id: int
-    reputation: int # Cambiado para que coincida con tu modelo User
+    reputation: int
     is_admin: bool
-    # Campos dinámicos para el Dashboard de Perfil
-    cart_count: int = 0
-    likes_count: int = 0
+    # Usamos Any o dict para evitar importar 'Product' aquí y romper el servidor
+    cart_items: List[Any] = [] 
+    liked_items: List[Any] = []
     purchases_count: int = 0
 
     class Config:
         from_attributes = True
+
