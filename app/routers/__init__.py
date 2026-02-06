@@ -1,2 +1,2 @@
-from . import auth, products, users, search, affiliates, categories
+from . import auth, products, users, search, affiliates, categories, interactions
 

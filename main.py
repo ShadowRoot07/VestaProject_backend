@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel
 from app.database import create_db_and_tables
-from app.routers import auth, products, users, search, affiliates, categories, comments
+from app.routers import auth, products, users, search, affiliates, categories, comments, interactions
 
 app = FastAPI(title="VestaAPI")
 
@@ -38,3 +38,4 @@ app.include_router(search.router)
 app.include_router(affiliates.router)
 app.include_router(categories.router)
 app.include_router(comments.router)
+app.include_router(interactions.router)
