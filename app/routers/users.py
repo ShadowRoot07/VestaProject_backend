@@ -15,20 +15,28 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.get("/me", response_model=UserPublic)
 def get_my_profile(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-    # Traemos los productos reales del carrito y likes
+    # 1. Traemos los productos
     cart_items = session.exec(
         select(Product).join(CartItem).where(CartItem.user_id == current_user.id)
     ).all()
-    
+
     liked_items = session.exec(
         select(Product).join(ProductLike).where(ProductLike.user_id == current_user.id)
     ).all()
 
+    # 2. Validamos el usuario base
     user_data = UserPublic.model_validate(current_user)
-    user_data.cart_items = cart_items # Añade esto a tu esquema UserPublic
+    
+    # 3. Inyectamos las listas (ahora sí el esquema las reconocerá)
+    user_data.cart_items = cart_items
     user_data.liked_items = liked_items
     
+    # 4. (Opcional) Si quieres mantener el conteo de compras
+    # purchases = session.exec(select(func.count(Purchase.id)).where(Purchase.user_id == current_user.id)).one()
+    # user_data.purchases_count = purchases
+
     return user_data
+
 
 @router.put("/me", response_model=UserPublic)
 def update_my_profile(

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional, List
 import bleach
+from app.models.products import Product
 
 class UserBase(BaseModel):
     username: str
