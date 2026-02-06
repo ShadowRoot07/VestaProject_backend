@@ -14,19 +14,20 @@ router = APIRouter(prefix="/users", tags=["Users"])
 # ... (get_my_products remains same) ...
 
 @router.get("/me", response_model=UserPublic)
-def get_my_profile(
-    current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
-):
-    cart_count = session.exec(select(func.count()).where(CartItem.user_id == current_user.id)).one()
-    likes_count = session.exec(select(func.count()).where(ProductLike.user_id == current_user.id)).one()
-    purchases_count = session.exec(select(func.count()).where(Purchase.user_id == current_user.id)).one()
+def get_my_profile(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+    # Traemos los productos reales del carrito y likes
+    cart_items = session.exec(
+        select(Product).join(CartItem).where(CartItem.user_id == current_user.id)
+    ).all()
+    
+    liked_items = session.exec(
+        select(Product).join(ProductLike).where(ProductLike.user_id == current_user.id)
+    ).all()
 
     user_data = UserPublic.model_validate(current_user)
-    user_data.cart_count = cart_count
-    user_data.likes_count = likes_count
-    user_data.purchases_count = purchases_count
-
+    user_data.cart_items = cart_items # Añade esto a tu esquema UserPublic
+    user_data.liked_items = liked_items
+    
     return user_data
 
 @router.put("/me", response_model=UserPublic)
