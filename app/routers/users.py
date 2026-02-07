@@ -15,25 +15,21 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.get("/me", response_model=UserPublic)
 def get_my_profile(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-    # 1. Traemos los productos
-    cart_items = session.exec(
-        select(Product).join(CartItem).where(CartItem.user_id == current_user.id)
+    # ... (tus consultas anteriores de cart_items y liked_items) ...
+
+    # Traemos las compras (Purchases)
+    # Aquí puedes hacer un join para traer los detalles del producto comprado
+    purchases = session.exec(
+        select(Product).join(Purchase).where(Purchase.user_id == current_user.id)
     ).all()
 
-    liked_items = session.exec(
-        select(Product).join(ProductLike).where(ProductLike.user_id == current_user.id)
-    ).all()
-
-    # 2. Validamos el usuario base
     user_data = UserPublic.model_validate(current_user)
-    
-    # 3. Inyectamos las listas (ahora sí el esquema las reconocerá)
     user_data.cart_items = cart_items
     user_data.liked_items = liked_items
     
-    # 4. (Opcional) Si quieres mantener el conteo de compras
-    # purchases = session.exec(select(func.count(Purchase.id)).where(Purchase.user_id == current_user.id)).one()
-    # user_data.purchases_count = purchases
+    # Inyectamos la lista de productos comprados y el conteo
+    user_data.purchases_items = purchases # Asegúrate de añadir esto a UserPublic en schemas
+    user_data.purchases_count = len(purchases)
 
     return user_data
 
