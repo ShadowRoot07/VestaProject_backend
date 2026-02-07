@@ -63,3 +63,26 @@ def get_category_report(
     # Retornamos una lista de objetos simple
     return [{"category": r[0], "sales": r[1]} for r in results]
 
+
+@router.post("/users/{user_id}/add-balance")
+def add_balance(
+    user_id: int, 
+    amount: float, 
+    admin: User = Depends(get_current_admin_user), 
+    session: Session = Depends(get_session)
+):
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="El monto debe ser mayor a 0")
+        
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+    user.balance += amount
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    
+    return {"message": "Saldo actualizado", "new_balance": user.balance}
+
+
