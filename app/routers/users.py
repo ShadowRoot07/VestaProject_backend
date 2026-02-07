@@ -15,21 +15,28 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.get("/me", response_model=UserPublic)
 def get_my_profile(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-    # ... (tus consultas anteriores de cart_items y liked_items) ...
+    # 1. ¡ESTO ES LO QUE FALTA! Las consultas para definir las variables
+    cart_items = session.exec(
+        select(Product).join(CartItem).where(CartItem.user_id == current_user.id)
+    ).all()
 
-    # Traemos las compras (Purchases)
-    # Aquí puedes hacer un join para traer los detalles del producto comprado
-    purchases = session.exec(
+    liked_items = session.exec(
+        select(Product).join(ProductLike).where(ProductLike.user_id == current_user.id)
+    ).all()
+    
+    # También traemos las compras para el historial
+    purchases_items = session.exec(
         select(Product).join(Purchase).where(Purchase.user_id == current_user.id)
     ).all()
 
+    # 2. Validamos el usuario base
     user_data = UserPublic.model_validate(current_user)
+
+    # 3. Ahora sí, asignamos (aquí es donde fallaba porque no existían arriba)
     user_data.cart_items = cart_items
     user_data.liked_items = liked_items
-    
-    # Inyectamos la lista de productos comprados y el conteo
-    user_data.purchases_items = purchases # Asegúrate de añadir esto a UserPublic en schemas
-    user_data.purchases_count = len(purchases)
+    user_data.purchases_items = purchases_items
+    user_data.purchases_count = len(purchases_items)
 
     return user_data
 
