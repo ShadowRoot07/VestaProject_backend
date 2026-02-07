@@ -86,3 +86,35 @@ def add_balance(
     return {"message": "Saldo actualizado", "new_balance": user.balance}
 
 
+@router.patch("/users/{user_id}/add-balance")
+def add_balance(
+    user_id: int, 
+    amount: float = Query(..., gt=0), # gt=0 valida que sea mayor a cero
+    admin: User = Depends(get_current_admin_user), 
+    session: Session = Depends(get_session)
+):
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    user.balance += amount
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    
+    return {"message": "Saldo actualizado", "new_balance": user.balance}
+
+# Extra: Banear/Eliminar productos (El Ban Hammer)
+@router.delete("/products/{product_id}")
+def delete_product_admin(
+    product_id: int,
+    admin: User = Depends(get_current_admin_user),
+    session: Session = Depends(get_session)
+):
+    product = session.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    
+    session.delete(product)
+    session.commit()
+    return {"message": "Producto eliminado por el administrador"}
