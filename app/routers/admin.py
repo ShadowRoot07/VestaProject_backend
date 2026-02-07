@@ -40,3 +40,26 @@ def list_all_users(
     users = session.exec(select(User)).all()
     return users
 
+
+@router.get("/reports/categories")
+def get_category_report(
+    admin: User = Depends(get_current_admin_user), 
+    session: Session = Depends(get_session)
+):
+    # Esta consulta agrupa las compras por categoría y las cuenta
+    # Es como pasarle un escáner a todo el edificio para ver qué piso es más visitado
+    from app.models.products import Product
+    from app.models.categories import Category
+
+    statement = (
+        select(Category.name, func.count(Purchase.id).label("total_sales"))
+        .join(Product, Product.category_id == Category.id)
+        .join(Purchase, Purchase.product_id == Product.id)
+        .group_by(Category.name)
+        .order_by(func.count(Purchase.id).desc())
+    )
+    
+    results = session.exec(statement).all()
+    # Retornamos una lista de objetos simple
+    return [{"category": r[0], "sales": r[1]} for r in results]
+
