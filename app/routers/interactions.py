@@ -105,3 +105,24 @@ def process_checkout(
         "remaining_balance": current_user.balance
     }
 
+
+@router.delete("/cart/{product_id}")
+def remove_from_cart(
+    product_id: int, 
+    current_user: User = Depends(get_current_user), 
+    session: Session = Depends(get_session)
+):
+    # Buscamos el item en el carrito de este usuario específico
+    statement = select(CartItem).where(
+        CartItem.user_id == current_user.id, 
+        CartItem.product_id == product_id
+    )
+    item = session.exec(statement).first()
+
+    if not item:
+        raise HTTPException(status_code=404, detail="El producto no está en el carrito")
+
+    session.delete(item)
+    session.commit()
+    
+    return {"message": "Producto eliminado del carrito"}
