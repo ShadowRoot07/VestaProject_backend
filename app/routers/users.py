@@ -13,9 +13,9 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 # ... (get_my_products remains same) ...
 
+
 @router.get("/me", response_model=UserPublic)
 def get_my_profile(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-    # 1. ¡ESTO ES LO QUE FALTA! Las consultas para definir las variables
     cart_items = session.exec(
         select(Product).join(CartItem).where(CartItem.user_id == current_user.id)
     ).all()
@@ -23,22 +23,25 @@ def get_my_profile(current_user: User = Depends(get_current_user), session: Sess
     liked_items = session.exec(
         select(Product).join(ProductLike).where(ProductLike.user_id == current_user.id)
     ).all()
+
+    # Cambiamos esto para obtener una lista de dicts que incluya el precio de la compra
+    purchases_statement = select(Product, Purchase.price_at_purchase).join(Purchase).where(Purchase.user_id == current_user.id)
+    results = session.exec(purchases_statement).all()
     
-    # También traemos las compras para el historial
-    purchases_items = session.exec(
-        select(Product).join(Purchase).where(Purchase.user_id == current_user.id)
-    ).all()
+    purchases_list = []
+    for product, price in results:
+        p_dict = product.model_dump()
+        p_dict["price"] = price  # Sobrescribimos con el precio que se pagó realmente
+        purchases_list.append(p_dict)
 
-    # 2. Validamos el usuario base
     user_data = UserPublic.model_validate(current_user)
-
-    # 3. Ahora sí, asignamos (aquí es donde fallaba porque no existían arriba)
     user_data.cart_items = cart_items
     user_data.liked_items = liked_items
-    user_data.purchases_items = purchases_items
-    user_data.purchases_count = len(purchases_items)
+    user_data.purchases_items = purchases_list # Enviamos la lista enriquecida
+    user_data.purchases_count = len(purchases_list)
 
     return user_data
+
 
 
 @router.put("/me", response_model=UserPublic)
