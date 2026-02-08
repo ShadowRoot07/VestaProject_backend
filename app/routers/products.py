@@ -104,3 +104,39 @@ def toggle_product_like(
         "likes_count": likes_count,
         "owner_reputation": owner.reputation if owner else 0
     }
+
+
+
+@router.post("", response_model=Product, status_code=status.HTTP_201_CREATED)
+def create_product(
+    product_in: ProductCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    # Aquí podrías restringir si solo Admins crean productos, 
+    # o si cualquier usuario puede (en Vesta, el Admin es el dueño del market)
+    new_product = Product(**product_in.model_dump(), owner_id=current_user.id)
+    session.add(new_product)
+    session.commit()
+    session.refresh(new_product)
+    return new_product
+
+# Modifica el DELETE para que el Admin tenga "Superpoderes"
+@router.delete("/{product_id}")
+def delete_product(
+    product_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    product = session.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+
+    # Si es el dueño O es Admin, puede borrar
+    if product.owner_id == current_user.id or current_user.is_admin:
+        session.delete(product)
+        session.commit()
+        return {"message": "Producto eliminado"}
+    
+    raise HTTPException(status_code=403, detail="No tienes permisos")
+
