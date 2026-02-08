@@ -8,7 +8,7 @@ class UserBase(BaseModel):
     bio: Optional[str] = None
     profile_pic: Optional[str] = None
     website: Optional[str] = None
-    balance: float
+    balance: float = 0.0 
 
     @field_validator("username", "bio")
     @classmethod
